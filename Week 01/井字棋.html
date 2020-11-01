@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>井字棋练习</title>
+    <style>
+        .container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            margin: auto;
+            width: 300px;
+            height: 500px;
+        }
+        .operations {
+            width: 300px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #e5e5e5;
+        }
+        .board {
+            height: 300px;
+        }
+        .cell {
+            float: left;
+            width: 100px;
+            height: 100px;
+            border: 1px solid blue;
+            box-sizing: border-box;
+            font-size: 40px;
+            text-align: center;
+            line-height: 100px;
+            cursor: pointer;
+            user-select: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="operations">
+            <button id="resetButton" class="btn reset">重新开始</button>
+        </div>
+        <div id="board" class="board"></div>
+    </div>
+    <script>
+        const sides = {
+            o: 'O',
+            x: 'X', 
+        };
+        let current = 'o'; // 当前
+        let isEnd = false; // 是否已经结束
+        let qp = []; // 棋盘
+        const board = document.getElementById('board');
+        const resetButton = document.getElementById('resetButton');
+        const reset = function() {
+            isEnd = false;
+            current = 'o';
+            qp = new Array(3).fill(null).map(i => new Array(3).fill(null));
+            board.innerHTML = null
+            paint();
+        }
+        resetButton.addEventListener('click', reset);
+        reset();
+        function paint() {
+            for(let i = 0; i < 3; i++) {
+                for(let j = 0; j < 3; j++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    cell.innerText = '';
+                    board.appendChild(cell);
+                    cell.addEventListener('click', (e) => {
+                        if (isEnd || qp[i][j]) return; // 已结束或者已经下过，则直接返回
+                        qp[i][j] = sides[current];
+                        cell.innerText = sides[current];
+                        const isWin = judgeIfWin(qp, i, j, sides[current]); // 判断当前下棋方是否获胜
+                        if (isWin) {
+                            isEnd = true;
+                            alert(`${current} is winner!`)
+                            return;
+                        }
+                        changePlayer();
+                        if (willWin(qp, sides[current]).result === 1) {
+                            isEnd = true;
+                            alert(`${current} will win`);
+                        }
+                        computerSides(cell);
+                    })
+                }
+            }
+        }
+        function computerSides(cell) {
+            let r = bestChoice(qp, sides.x);
+            console.log('r', qp, r)
+            if (r.point) {
+                let order = r.point[0] * 3 + r.point[1];
+                let cell = document.getElementsByClassName('cell')[order];
+                cell.innerText = sides.x;
+                qp[r.point[0]][r.point[1]] = sides.x
+                changePlayer();
+            }
+        }
+        function bestChoice(qp, current) {
+            let canWin = willWin(qp, current);
+            if (canWin.result === 1) return {
+                result: 1,
+                point: canWin.point,
+            };
+            let result = -2;
+            let point = null;
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    if (qp[i][j]) continue;
+                    let tempQp = clone(qp)
+                    tempQp[i][j] = current;
+                    let r = bestChoice(tempQp, current === sides.o ? sides.x : sides.o);
+                    if (-r.result > result) {
+                        result = -r.result;
+                        point = [i, j];
+                    }
+                }
+            }
+            return {
+                result: point ? result : 0,
+                point,
+            }
+        }
+        function willWin(qp, current) {
+            let result = -2;
+            let point = null;
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    if (qp[i][j]) continue;
+                    let cloneQp = clone(qp)
+                    cloneQp[i][j] = current
+                    if (judgeIfWin(cloneQp, i, j, current)) {
+                        return {
+                            result: 1,
+                            point: [i, j],
+                        }
+                    }
+                    if (i === 2 && j === 2) result = 0
+                }
+            }
+            return {
+                result,
+                point,
+            }
+        }
+        function judgeIfWin(qp, x, y, current) {
+            // 横向
+            for (let j = 0; j < 3; j++) {
+                if (qp[x][j] !== current) break;
+                if (j === 2) return true
+            }
+            // 纵向
+            for (let i = 0; i < 3; i++) {
+                if (qp[i][y] !== current) break;
+                if (i === 2) return true;
+            }
+            // 斜向
+            if (x !== y && x !== 2 - y) return false;
+            for (let i = 0; i < 3; i++) {
+                if (qp[i][i] !== current) break;
+                console.log(i)
+                if (i === 2) return true;
+            }
+            for (let i = 0; i < 3; i++) {
+                if (qp[i][2 - i] !== current) break;
+                if (i === 2) return true;
+            }
+            // 都没有，没赢
+            return false;
+        }
+        function changePlayer() {
+            current = current === 'o' ? 'x' : 'o';
+        }
+        function clone(m) { // 暴力处理下
+            return JSON.parse(JSON.stringify(m));
+        }
+    </script>
+</body>
+</html>

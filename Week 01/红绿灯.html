@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>红绿灯</title>
+    <style>
+        .container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            margin: auto;
+
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            width: 350px;
+            height: 70px;
+            border: 1px solid gray;
+            border-radius: 35px;
+        }
+        .item {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: gray;
+            list-style: none;
+        }
+        .item.red {
+            background-color: red;
+        }
+        .item.green {
+            background-color: green;
+        }
+        .item.yellow {
+            background-color: yellow;
+        }
+    </style>
+</head>
+<body>
+    <ul id="container" class="container">
+        <li class="item" data-color="red"></li>
+        <li class="item" data-color="green"></li>
+        <li class="item" data-color="yellow"></li>
+    </ul>
+    <script>
+        main()
+        async function main() {
+            while(true) {
+                await set('green');
+                await sleep(10)
+                await set('yellow');
+                await sleep(2)
+                await set('red');
+                await sleep(5)
+            };
+        };
+
+        function sleep(duration) {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    resolve();
+                }, duration * 1000);
+            });
+        };
+        function set(color) {
+            let list = document.getElementsByClassName('item')
+            for(let i = 0; i < list.length; i++) {
+                const ele = list[i]
+                console.log(ele.dataset.color)
+                if (ele.dataset.color === color) {
+                    ele.classList.add(color)
+                } else {
+                    ele.classList = 'item'
+                }
+            }
+        }
+    </script>
+</body>
+</html>
