@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>地图</title>
+    <style>
+        .map {
+            width: 600px;
+            height: 600px;
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .cell {
+            width: 6px;
+            height: 6px;
+            border-right: 1px solid #333333;
+            border-bottom: 1px solid #333333;
+            box-sizing: border-box;
+        }
+        .top {
+            border-top: 1px solid #333333;
+        }
+        .left {
+            border-left: 1px solid #333333;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <button id="saveButton">保存地图</button>
+        <button id="clearButton">清空地图</button>
+    </div>
+    <div id="map" class="map"></div>
+    <script>
+        const mapDom = getDomById('map'); // 地图dom
+        const saveButton = getDomById('saveButton'); // 保存按钮
+        const clearButton = getDomById('clearButton'); // 清除按钮
+        const MAP_LENGTH = 10000; // 地图元素个数
+        const Map = {
+            get() {
+                return localStorage.getItem('map') ? JSON.parse(localStorage.getItem('map')) : new Array(MAP_LENGTH).fill(0)
+            },
+            set(map) {
+                localStorage.setItem('map', JSON.stringify(map))
+                return {
+                    result: true
+                }
+            },
+            clear() {
+                const map = new Array(MAP_LENGTH).fill(0)
+                Map.set(map)
+                return map;    
+            },
+        };
+        let map = Map.get();
+        let mousedown = false;
+        let clear = false;
+
+        saveButton.addEventListener('click', e => {
+            Map.set(map);
+        });
+        clearButton.addEventListener('click', e => {
+            map = Map.clear();
+            paint(map);
+        });
+        paint(map);
+        function getDomById(id) {
+            return document.getElementById(id)
+        }
+        function paint(map) {
+            mapDom.innerHTML = '';
+            for (let i = 0; i < map.length; i++) {
+                let cell = document.createElement('div');
+                let classList = 'cell';
+                if (i < 100) classList += ' top';
+                if (i % 100 === 0) classList += ' left';
+                cell.classList = classList;
+                if (map[i]) {
+                    cell.style.backgroundColor = "black";
+                }
+                cell.addEventListener('mousemove', e => {
+                    if (!mousedown) return;
+                    if (clear) {
+                        cell.style.backgroundColor = "";
+                        map[i] = 0;
+                    } else {
+                        cell.style.backgroundColor = "black";
+                        map[i] = 1;
+                    }
+                })
+                mapDom.appendChild(cell);
+            }
+        };
+        document.addEventListener('mousedown', e => {
+            mousedown = true
+            clear = e.which === 3
+        });
+        document.addEventListener('mouseup', e => {
+            mousedown = false
+        });
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        async function path(map, start, end) {
+            let queue = new Sorted([start], (a, b) => distance(a) - distance(b))
+            function distance(point) {
+                return (point[0] - end[0]) ** 2 + (point[1] - end[1]) ** 2;
+            }
+            const table = Object.create(map);
+
+            async function insert(x, y, point) {
+                if (x < 0 || y < 0 || x >= 100 || y >= 100) return;
+                if (map[y * 100 + x]) return;
+                mapDom.children[y * 100 + x].style.backgroundColor = 'lightgreen';
+                map[y * 100 + x] = 2;
+                table[y * 100 + x] = point;
+                // queue.push([x, y]);
+                queue.give([x, y]);
+            }
+            while(queue.data.length) {
+                // let [x, y] = queue.shift();
+                let [x, y] = queue.take();
+                if (x === end[0] && y === end[1]) {
+                    let path = [];
+                    let point = [x, y];
+                    while(x !== start[0] || y !== start[1]) {
+                        path.push(point);
+                        point = table[y * 100 + x];
+                        [x, y] = point;
+                        await sleep(10);
+                        mapDom.children[y * 100 + x].style.backgroundColor = 'red';
+                    }
+                    return path
+                };
+                await insert(x - 1, y, [x, y]);
+                await insert(x, y - 1, [x, y]);
+                await insert(x + 1, y, [x, y]);
+                await insert(x, y + 1, [x, y]);
+                await insert(x - 1, y - 1, [x, y]);
+                await insert(x - 1, y + 1, [x, y]);
+                await insert(x + 1, y + 1, [x, y]);
+                await insert(x + 1, y - 1, [x, y]);
+            }
+            return null;
+        }
+        function sleep(duration) {
+            return new Promise(resolve => {
+                setTimeout(resolve, duration);
+            })
+        }
+        class Sorted {
+            constructor(data, compare) {
+                this.data = data.slice();
+                this.compare = compare || ((a, b) => a - b);
+            }
+            take() {
+                if (!this.data.length) return;
+                let minValue = this.data[0];
+                let minIndex = 0;
+                for (let i = 1; i < this.data.length; i++) {
+                    if (this.compare(this.data[i], minValue) < 0) {
+                        minValue = this.data[i];
+                        minIndex = i;
+                    }
+                }
+                this.data[minIndex] = this.data[this.data.length - 1];
+                this.data.pop();
+                return minValue;
+            }
+            give(value) {
+                this.data.push(value);
+            }
+        }
+    </script>
+</body>
+</html>
