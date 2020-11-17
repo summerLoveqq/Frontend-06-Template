@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        br {
+            height: 0;
+        }
+        .board-item {
+            margin: 0 16px 16px 0;
+            position: relative;
+            top: -2px;
+            left: -2px;
+            display: block;
+            width: 4px;
+            height: 4px;
+            float: left;
+            /* vertical-align: top; */
+        }
+        .board-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 20px;
+            height: 20px;
+            border: 1px solid #999999;
+            box-sizing: border-box;
+            /* background: red; */
+        }
+        
+    </style>
+    <title>五子棋</title>
+</head>
+<body>
+    <div id="board"></div>
+    <script>
+        const board = document.getElementById('board')
+        let rowNumber = 15
+        let pattern = generateQiPan(rowNumber) // 获得棋盘
+        show(pattern)
+        // 绘制棋盘
+        function show(pattern) {
+            // pattern校验  略
+            for (let i = 0; i < pattern.length; i++) {
+                for (let j = 0; j < pattern[i].length; j++) {
+                    const item = document.createElement('div')
+                    const className = 
+                            pattern[i][j] === 1 ? 'black board-item' :
+                            pattern[i][j] === 2 ? 'white board-item' : 'board-item'
+                    item.classList.add(className)
+                    board.appendChild(item)
+                }
+                // board.appendChild(document.createElement('br'))
+            }
+        }
+        // 生成棋盘
+        function generateQiPan(number) {
+            // number合规性检测 略
+            let result = []
+            for (let i = 0; i < number; i ++) {
+                result.push(new Array(number).fill(0))
+            }
+            return result
+        }
+    </script>
+</body>
+</html>
